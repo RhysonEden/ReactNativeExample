@@ -1,41 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SearchBar from "../components/SearchBar";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import yelp from "../api/yelp";
+import useResults from "../hooks/useResults";
+import ResultsList from "../components/ResultsList";
 
 const SearchScreen = () => {
   const [term, setTerm] = useState("");
-  const [results, setResults] = useState([]);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [searchApi, results, errorMessage] = useResults();
 
-  const searchApi = async (searchTerm) => {
-    try {
-      const resp = await yelp.get("/search", {
-        params: {
-          limit: 50,
-          term: searchTerm,
-          location: "san jose",
-        },
-      });
-      setResults(resp.data.businesses);
-    } catch (err) {
-      setErrorMessage("Something went wrong, please try again");
-    }
+  const filterPrice = (price) => {
+    return results.filter((result) => {
+      return result.price === price;
+    });
   };
-
-  useEffect(() => {
-    searchApi("pasta");
-  }, []);
-  // useEffect(() => {
-  //   searchApi("pasta")
-  //     .then((res) => {
-  //       setResults(res);
-  //     })
-  //     .catch((error) => {
-  //       setErrorMessage(error.message);
-  //     });
-  // }, []);
 
   return (
     <View>
@@ -47,7 +24,14 @@ const SearchScreen = () => {
       {errorMessage ? (
         <Text style={styles.background}>{errorMessage}</Text>
       ) : null}
-      <Text>We have found {results.length} results.</Text>
+
+      <ResultsList results={filterPrice("$")} title="Cost Effective" />
+      <ResultsList results={filterPrice("$$")} title="Bit Pricier" />
+      <ResultsList results={filterPrice("$$$")} title="More Expensive" />
+      <ResultsList results={filterPrice("")} title="Most Expensive" />
+      <Text style={styles.resultStyle}>
+        We have found {results.length} results.
+      </Text>
     </View>
   );
 };
@@ -55,6 +39,10 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   background: {
     backgroundColor: "white",
+  },
+  resultStyle: {
+    alignSelf: "center",
+    marginTop: 100,
   },
 });
 
